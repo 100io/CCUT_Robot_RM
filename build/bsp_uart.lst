@@ -1,0 +1,537 @@
+ARM GAS  C:\User\Default\ccIEVNpa.s 			page 1
+
+
+   1              		.cpu cortex-m4
+   2              		.arch armv7e-m
+   3              		.fpu fpv4-sp-d16
+   4              		.eabi_attribute 27, 1
+   5              		.eabi_attribute 28, 1
+   6              		.eabi_attribute 20, 1
+   7              		.eabi_attribute 21, 1
+   8              		.eabi_attribute 23, 3
+   9              		.eabi_attribute 24, 1
+  10              		.eabi_attribute 25, 1
+  11              		.eabi_attribute 26, 1
+  12              		.eabi_attribute 30, 1
+  13              		.eabi_attribute 34, 1
+  14              		.eabi_attribute 18, 4
+  15              		.file	"bsp_uart.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.section	.text.bsp_uart_send_byte,"ax",%progbits
+  20              		.align	1
+  21              		.global	bsp_uart_send_byte
+  22              		.syntax unified
+  23              		.thumb
+  24              		.thumb_func
+  26              	bsp_uart_send_byte:
+  27              	.LVL0:
+  28              	.LFB137:
+  29              		.file 1 "Board/Src/bsp_uart.c"
+   1:Board/Src/bsp_uart.c **** #include "bsp_uart.h"
+   2:Board/Src/bsp_uart.c **** #include "usart.h"
+   3:Board/Src/bsp_uart.c **** #include "stdarg.h"
+   4:Board/Src/bsp_uart.c **** #include "stdio.h"
+   5:Board/Src/bsp_uart.c **** /* 作者：LWH 时间：2024年10月 目标：调用HAL库实现串口的发送功能 */
+   6:Board/Src/bsp_uart.c **** 
+   7:Board/Src/bsp_uart.c **** 
+   8:Board/Src/bsp_uart.c **** /* 定义hal库的句柄 */
+   9:Board/Src/bsp_uart.c **** extern UART_HandleTypeDef huart1;
+  10:Board/Src/bsp_uart.c **** 
+  11:Board/Src/bsp_uart.c **** /*定义相关全局变量*/
+  12:Board/Src/bsp_uart.c **** 
+  13:Board/Src/bsp_uart.c **** 
+  14:Board/Src/bsp_uart.c **** 
+  15:Board/Src/bsp_uart.c **** /*对函数进行定义*/
+  16:Board/Src/bsp_uart.c **** 
+  17:Board/Src/bsp_uart.c **** 
+  18:Board/Src/bsp_uart.c **** 
+  19:Board/Src/bsp_uart.c **** /*实现串口发送一个字节的函数*/
+  20:Board/Src/bsp_uart.c **** void bsp_uart_send_byte(uint8_t Byte){
+  30              		.loc 1 20 38 view -0
+  31              		.cfi_startproc
+  32              		@ args = 0, pretend = 0, frame = 8
+  33              		@ frame_needed = 0, uses_anonymous_args = 0
+  34              		.loc 1 20 38 is_stmt 0 view .LVU1
+  35 0000 00B5     		push	{lr}
+  36              	.LCFI0:
+  37              		.cfi_def_cfa_offset 4
+  38              		.cfi_offset 14, -4
+ARM GAS  C:\User\Default\ccIEVNpa.s 			page 2
+
+
+  39 0002 83B0     		sub	sp, sp, #12
+  40              	.LCFI1:
+  41              		.cfi_def_cfa_offset 16
+  42 0004 8DF80700 		strb	r0, [sp, #7]
+  21:Board/Src/bsp_uart.c ****     HAL_UART_Transmit(&huart1,&Byte,1,HAL_MAX_DELAY);
+  43              		.loc 1 21 5 is_stmt 1 view .LVU2
+  44 0008 4FF0FF33 		mov	r3, #-1
+  45 000c 0122     		movs	r2, #1
+  46 000e 0DF10701 		add	r1, sp, #7
+  47 0012 0348     		ldr	r0, .L3
+  48              	.LVL1:
+  49              		.loc 1 21 5 is_stmt 0 view .LVU3
+  50 0014 FFF7FEFF 		bl	HAL_UART_Transmit
+  51              	.LVL2:
+  22:Board/Src/bsp_uart.c **** }
+  52              		.loc 1 22 1 view .LVU4
+  53 0018 03B0     		add	sp, sp, #12
+  54              	.LCFI2:
+  55              		.cfi_def_cfa_offset 4
+  56              		@ sp needed
+  57 001a 5DF804FB 		ldr	pc, [sp], #4
+  58              	.L4:
+  59 001e 00BF     		.align	2
+  60              	.L3:
+  61 0020 00000000 		.word	huart1
+  62              		.cfi_endproc
+  63              	.LFE137:
+  65              		.section	.text.bsp_uart_send_array,"ax",%progbits
+  66              		.align	1
+  67              		.global	bsp_uart_send_array
+  68              		.syntax unified
+  69              		.thumb
+  70              		.thumb_func
+  72              	bsp_uart_send_array:
+  73              	.LVL3:
+  74              	.LFB138:
+  23:Board/Src/bsp_uart.c **** /*实现串口发送数组*/
+  24:Board/Src/bsp_uart.c **** void bsp_uart_send_array(uint8_t *Array,uint16_t length){
+  75              		.loc 1 24 57 is_stmt 1 view -0
+  76              		.cfi_startproc
+  77              		@ args = 0, pretend = 0, frame = 0
+  78              		@ frame_needed = 0, uses_anonymous_args = 0
+  79              		.loc 1 24 57 is_stmt 0 view .LVU6
+  80 0000 70B5     		push	{r4, r5, r6, lr}
+  81              	.LCFI3:
+  82              		.cfi_def_cfa_offset 16
+  83              		.cfi_offset 4, -16
+  84              		.cfi_offset 5, -12
+  85              		.cfi_offset 6, -8
+  86              		.cfi_offset 14, -4
+  87 0002 0646     		mov	r6, r0
+  88 0004 0D46     		mov	r5, r1
+  25:Board/Src/bsp_uart.c ****     for(uint16_t i=0;i<length;i++){
+  89              		.loc 1 25 5 is_stmt 1 view .LVU7
+  90              	.LBB2:
+  91              		.loc 1 25 9 view .LVU8
+  92              	.LVL4:
+ARM GAS  C:\User\Default\ccIEVNpa.s 			page 3
+
+
+  93              		.loc 1 25 18 is_stmt 0 view .LVU9
+  94 0006 0024     		movs	r4, #0
+  95              		.loc 1 25 5 view .LVU10
+  96 0008 04E0     		b	.L6
+  97              	.LVL5:
+  98              	.L7:
+  26:Board/Src/bsp_uart.c ****         bsp_uart_send_byte(Array[i]);
+  99              		.loc 1 26 9 is_stmt 1 discriminator 3 view .LVU11
+ 100 000a 305D     		ldrb	r0, [r6, r4]	@ zero_extendqisi2
+ 101 000c FFF7FEFF 		bl	bsp_uart_send_byte
+ 102              	.LVL6:
+  25:Board/Src/bsp_uart.c ****     for(uint16_t i=0;i<length;i++){
+ 103              		.loc 1 25 31 discriminator 3 view .LVU12
+  25:Board/Src/bsp_uart.c ****     for(uint16_t i=0;i<length;i++){
+ 104              		.loc 1 25 32 is_stmt 0 discriminator 3 view .LVU13
+ 105 0010 0134     		adds	r4, r4, #1
+ 106              	.LVL7:
+  25:Board/Src/bsp_uart.c ****     for(uint16_t i=0;i<length;i++){
+ 107              		.loc 1 25 32 discriminator 3 view .LVU14
+ 108 0012 A4B2     		uxth	r4, r4
+ 109              	.LVL8:
+ 110              	.L6:
+  25:Board/Src/bsp_uart.c ****     for(uint16_t i=0;i<length;i++){
+ 111              		.loc 1 25 22 is_stmt 1 discriminator 1 view .LVU15
+  25:Board/Src/bsp_uart.c ****     for(uint16_t i=0;i<length;i++){
+ 112              		.loc 1 25 5 is_stmt 0 discriminator 1 view .LVU16
+ 113 0014 AC42     		cmp	r4, r5
+ 114 0016 F8D3     		bcc	.L7
+ 115              	.LBE2:
+  27:Board/Src/bsp_uart.c ****     }
+  28:Board/Src/bsp_uart.c **** }
+ 116              		.loc 1 28 1 view .LVU17
+ 117 0018 70BD     		pop	{r4, r5, r6, pc}
+ 118              		.loc 1 28 1 view .LVU18
+ 119              		.cfi_endproc
+ 120              	.LFE138:
+ 122              		.section	.text.bsp_uart_send_string,"ax",%progbits
+ 123              		.align	1
+ 124              		.global	bsp_uart_send_string
+ 125              		.syntax unified
+ 126              		.thumb
+ 127              		.thumb_func
+ 129              	bsp_uart_send_string:
+ 130              	.LVL9:
+ 131              	.LFB139:
+  29:Board/Src/bsp_uart.c **** /*实现串口发送一个字符串 */
+  30:Board/Src/bsp_uart.c **** void bsp_uart_send_string(char *mstring){
+ 132              		.loc 1 30 41 is_stmt 1 view -0
+ 133              		.cfi_startproc
+ 134              		@ args = 0, pretend = 0, frame = 0
+ 135              		@ frame_needed = 0, uses_anonymous_args = 0
+ 136              		.loc 1 30 41 is_stmt 0 view .LVU20
+ 137 0000 38B5     		push	{r3, r4, r5, lr}
+ 138              	.LCFI4:
+ 139              		.cfi_def_cfa_offset 16
+ 140              		.cfi_offset 3, -16
+ 141              		.cfi_offset 4, -12
+ARM GAS  C:\User\Default\ccIEVNpa.s 			page 4
+
+
+ 142              		.cfi_offset 5, -8
+ 143              		.cfi_offset 14, -4
+ 144 0002 0546     		mov	r5, r0
+  31:Board/Src/bsp_uart.c ****     for(uint16_t i=0;mstring[i]!='\0';i++){
+ 145              		.loc 1 31 5 is_stmt 1 view .LVU21
+ 146              	.LBB3:
+ 147              		.loc 1 31 9 view .LVU22
+ 148              	.LVL10:
+ 149              		.loc 1 31 18 is_stmt 0 view .LVU23
+ 150 0004 0024     		movs	r4, #0
+ 151              		.loc 1 31 5 view .LVU24
+ 152 0006 03E0     		b	.L10
+ 153              	.LVL11:
+ 154              	.L11:
+  32:Board/Src/bsp_uart.c ****         bsp_uart_send_byte(mstring[i]);
+ 155              		.loc 1 32 9 is_stmt 1 discriminator 3 view .LVU25
+ 156 0008 FFF7FEFF 		bl	bsp_uart_send_byte
+ 157              	.LVL12:
+  31:Board/Src/bsp_uart.c ****     for(uint16_t i=0;mstring[i]!='\0';i++){
+ 158              		.loc 1 31 39 discriminator 3 view .LVU26
+  31:Board/Src/bsp_uart.c ****     for(uint16_t i=0;mstring[i]!='\0';i++){
+ 159              		.loc 1 31 40 is_stmt 0 discriminator 3 view .LVU27
+ 160 000c 0134     		adds	r4, r4, #1
+ 161              	.LVL13:
+  31:Board/Src/bsp_uart.c ****     for(uint16_t i=0;mstring[i]!='\0';i++){
+ 162              		.loc 1 31 40 discriminator 3 view .LVU28
+ 163 000e A4B2     		uxth	r4, r4
+ 164              	.LVL14:
+ 165              	.L10:
+  31:Board/Src/bsp_uart.c ****     for(uint16_t i=0;mstring[i]!='\0';i++){
+ 166              		.loc 1 31 22 is_stmt 1 discriminator 1 view .LVU29
+  31:Board/Src/bsp_uart.c ****     for(uint16_t i=0;mstring[i]!='\0';i++){
+ 167              		.loc 1 31 29 is_stmt 0 discriminator 1 view .LVU30
+ 168 0010 285D     		ldrb	r0, [r5, r4]	@ zero_extendqisi2
+  31:Board/Src/bsp_uart.c ****     for(uint16_t i=0;mstring[i]!='\0';i++){
+ 169              		.loc 1 31 5 discriminator 1 view .LVU31
+ 170 0012 0028     		cmp	r0, #0
+ 171 0014 F8D1     		bne	.L11
+ 172              	.LBE3:
+  33:Board/Src/bsp_uart.c ****     }
+  34:Board/Src/bsp_uart.c **** }
+ 173              		.loc 1 34 1 view .LVU32
+ 174 0016 38BD     		pop	{r3, r4, r5, pc}
+ 175              		.loc 1 34 1 view .LVU33
+ 176              		.cfi_endproc
+ 177              	.LFE139:
+ 179              		.section	.text.serial_pow,"ax",%progbits
+ 180              		.align	1
+ 181              		.global	serial_pow
+ 182              		.syntax unified
+ 183              		.thumb
+ 184              		.thumb_func
+ 186              	serial_pow:
+ 187              	.LVL15:
+ 188              	.LFB140:
+  35:Board/Src/bsp_uart.c **** /*实现串口发送数字 */
+  36:Board/Src/bsp_uart.c **** 
+ARM GAS  C:\User\Default\ccIEVNpa.s 			page 5
+
+
+  37:Board/Src/bsp_uart.c **** //这个函数相当于根据y的值实现对x的幂运算，返回x^y
+  38:Board/Src/bsp_uart.c **** uint32_t serial_pow(uint32_t x,uint32_t y){
+ 189              		.loc 1 38 43 is_stmt 1 view -0
+ 190              		.cfi_startproc
+ 191              		@ args = 0, pretend = 0, frame = 0
+ 192              		@ frame_needed = 0, uses_anonymous_args = 0
+ 193              		@ link register save eliminated.
+ 194              		.loc 1 38 43 is_stmt 0 view .LVU35
+ 195 0000 0246     		mov	r2, r0
+  39:Board/Src/bsp_uart.c ****     uint32_t Result=1;
+ 196              		.loc 1 39 5 is_stmt 1 view .LVU36
+ 197              	.LVL16:
+  40:Board/Src/bsp_uart.c ****     while(y--){
+ 198              		.loc 1 40 5 view .LVU37
+  39:Board/Src/bsp_uart.c ****     uint32_t Result=1;
+ 199              		.loc 1 39 14 is_stmt 0 view .LVU38
+ 200 0002 0120     		movs	r0, #1
+ 201              	.LVL17:
+ 202              		.loc 1 40 10 view .LVU39
+ 203 0004 02E0     		b	.L14
+ 204              	.LVL18:
+ 205              	.L15:
+  41:Board/Src/bsp_uart.c ****         Result*=x;
+ 206              		.loc 1 41 9 is_stmt 1 view .LVU40
+ 207              		.loc 1 41 15 is_stmt 0 view .LVU41
+ 208 0006 02FB00F0 		mul	r0, r2, r0
+ 209              	.LVL19:
+  40:Board/Src/bsp_uart.c ****     while(y--){
+ 210              		.loc 1 40 12 view .LVU42
+ 211 000a 1946     		mov	r1, r3
+ 212              	.LVL20:
+ 213              	.L14:
+  40:Board/Src/bsp_uart.c ****     while(y--){
+ 214              		.loc 1 40 10 is_stmt 1 view .LVU43
+  40:Board/Src/bsp_uart.c ****     while(y--){
+ 215              		.loc 1 40 12 is_stmt 0 view .LVU44
+ 216 000c 4B1E     		subs	r3, r1, #1
+ 217              	.LVL21:
+  40:Board/Src/bsp_uart.c ****     while(y--){
+ 218              		.loc 1 40 10 view .LVU45
+ 219 000e 0029     		cmp	r1, #0
+ 220 0010 F9D1     		bne	.L15
+  42:Board/Src/bsp_uart.c ****     }
+  43:Board/Src/bsp_uart.c ****     return Result;
+ 221              		.loc 1 43 5 is_stmt 1 view .LVU46
+  44:Board/Src/bsp_uart.c **** }
+ 222              		.loc 1 44 1 is_stmt 0 view .LVU47
+ 223 0012 7047     		bx	lr
+ 224              		.cfi_endproc
+ 225              	.LFE140:
+ 227              		.section	.text.bsp_uart_send_num,"ax",%progbits
+ 228              		.align	1
+ 229              		.global	bsp_uart_send_num
+ 230              		.syntax unified
+ 231              		.thumb
+ 232              		.thumb_func
+ 234              	bsp_uart_send_num:
+ARM GAS  C:\User\Default\ccIEVNpa.s 			page 6
+
+
+ 235              	.LVL22:
+ 236              	.LFB141:
+  45:Board/Src/bsp_uart.c **** void bsp_uart_send_num(uint32_t number,uint8_t length){
+ 237              		.loc 1 45 55 is_stmt 1 view -0
+ 238              		.cfi_startproc
+ 239              		@ args = 0, pretend = 0, frame = 0
+ 240              		@ frame_needed = 0, uses_anonymous_args = 0
+ 241              		.loc 1 45 55 is_stmt 0 view .LVU49
+ 242 0000 70B5     		push	{r4, r5, r6, lr}
+ 243              	.LCFI5:
+ 244              		.cfi_def_cfa_offset 16
+ 245              		.cfi_offset 4, -16
+ 246              		.cfi_offset 5, -12
+ 247              		.cfi_offset 6, -8
+ 248              		.cfi_offset 14, -4
+ 249 0002 0646     		mov	r6, r0
+ 250 0004 0D46     		mov	r5, r1
+  46:Board/Src/bsp_uart.c ****     uint8_t i;
+ 251              		.loc 1 46 5 is_stmt 1 view .LVU50
+  47:Board/Src/bsp_uart.c ****     for(i=0;i<length;i++){
+ 252              		.loc 1 47 5 view .LVU51
+ 253              	.LVL23:
+ 254              		.loc 1 47 10 is_stmt 0 view .LVU52
+ 255 0006 0024     		movs	r4, #0
+ 256              		.loc 1 47 5 view .LVU53
+ 257 0008 14E0     		b	.L17
+ 258              	.LVL24:
+ 259              	.L18:
+  48:Board/Src/bsp_uart.c ****         bsp_uart_send_byte(number/serial_pow(10,length-i-1)%10+'0');//对数据的每一位进行�
+ 260              		.loc 1 48 9 is_stmt 1 discriminator 3 view .LVU54
+ 261              		.loc 1 48 55 is_stmt 0 discriminator 3 view .LVU55
+ 262 000a 291B     		subs	r1, r5, r4
+ 263              		.loc 1 48 35 discriminator 3 view .LVU56
+ 264 000c 0139     		subs	r1, r1, #1
+ 265 000e 0A20     		movs	r0, #10
+ 266 0010 FFF7FEFF 		bl	serial_pow
+ 267              	.LVL25:
+ 268              		.loc 1 48 34 discriminator 3 view .LVU57
+ 269 0014 B6FBF0F0 		udiv	r0, r6, r0
+ 270              		.loc 1 48 60 discriminator 3 view .LVU58
+ 271 0018 084B     		ldr	r3, .L20
+ 272 001a A3FB0023 		umull	r2, r3, r3, r0
+ 273 001e DB08     		lsrs	r3, r3, #3
+ 274 0020 03EB8303 		add	r3, r3, r3, lsl #2
+ 275 0024 A0EB4303 		sub	r3, r0, r3, lsl #1
+ 276              		.loc 1 48 9 discriminator 3 view .LVU59
+ 277 0028 3033     		adds	r3, r3, #48
+ 278 002a D8B2     		uxtb	r0, r3
+ 279 002c FFF7FEFF 		bl	bsp_uart_send_byte
+ 280              	.LVL26:
+  47:Board/Src/bsp_uart.c ****     for(i=0;i<length;i++){
+ 281              		.loc 1 47 22 is_stmt 1 discriminator 3 view .LVU60
+  47:Board/Src/bsp_uart.c ****     for(i=0;i<length;i++){
+ 282              		.loc 1 47 23 is_stmt 0 discriminator 3 view .LVU61
+ 283 0030 0134     		adds	r4, r4, #1
+ 284              	.LVL27:
+  47:Board/Src/bsp_uart.c ****     for(i=0;i<length;i++){
+ARM GAS  C:\User\Default\ccIEVNpa.s 			page 7
+
+
+ 285              		.loc 1 47 23 discriminator 3 view .LVU62
+ 286 0032 E4B2     		uxtb	r4, r4
+ 287              	.LVL28:
+ 288              	.L17:
+  47:Board/Src/bsp_uart.c ****     for(i=0;i<length;i++){
+ 289              		.loc 1 47 13 is_stmt 1 discriminator 1 view .LVU63
+  47:Board/Src/bsp_uart.c ****     for(i=0;i<length;i++){
+ 290              		.loc 1 47 5 is_stmt 0 discriminator 1 view .LVU64
+ 291 0034 AC42     		cmp	r4, r5
+ 292 0036 E8D3     		bcc	.L18
+  49:Board/Src/bsp_uart.c ****     }
+  50:Board/Src/bsp_uart.c **** }
+ 293              		.loc 1 50 1 view .LVU65
+ 294 0038 70BD     		pop	{r4, r5, r6, pc}
+ 295              	.LVL29:
+ 296              	.L21:
+ 297              		.loc 1 50 1 view .LVU66
+ 298 003a 00BF     		.align	2
+ 299              	.L20:
+ 300 003c CDCCCCCC 		.word	-858993459
+ 301              		.cfi_endproc
+ 302              	.LFE141:
+ 304              		.section	.text.bsp_uart_send_printf,"ax",%progbits
+ 305              		.align	1
+ 306              		.global	bsp_uart_send_printf
+ 307              		.syntax unified
+ 308              		.thumb
+ 309              		.thumb_func
+ 311              	bsp_uart_send_printf:
+ 312              	.LVL30:
+ 313              	.LFB142:
+  51:Board/Src/bsp_uart.c **** /*实现c语言printf的重定向*/
+  52:Board/Src/bsp_uart.c **** void bsp_uart_send_printf(char *format, ...){
+ 314              		.loc 1 52 45 is_stmt 1 view -0
+ 315              		.cfi_startproc
+ 316              		@ args = 4, pretend = 16, frame = 0
+ 317              		@ frame_needed = 0, uses_anonymous_args = 1
+ 318              		.loc 1 52 45 is_stmt 0 view .LVU68
+ 319 0000 0FB4     		push	{r0, r1, r2, r3}
+ 320              	.LCFI6:
+ 321              		.cfi_def_cfa_offset 16
+ 322              		.cfi_offset 0, -16
+ 323              		.cfi_offset 1, -12
+ 324              		.cfi_offset 2, -8
+ 325              		.cfi_offset 3, -4
+ 326 0002 10B5     		push	{r4, lr}
+ 327              	.LCFI7:
+ 328              		.cfi_def_cfa_offset 24
+ 329              		.cfi_offset 4, -24
+ 330              		.cfi_offset 14, -20
+ 331 0004 02AA     		add	r2, sp, #8
+ 332 0006 52F8041B 		ldr	r1, [r2], #4
+  53:Board/Src/bsp_uart.c ****     static uint8_t tx_buf[256] = {0};
+ 333              		.loc 1 53 5 is_stmt 1 view .LVU69
+  54:Board/Src/bsp_uart.c ****     static va_list ap;
+ 334              		.loc 1 54 5 view .LVU70
+  55:Board/Src/bsp_uart.c ****     static uint16_t len;
+ARM GAS  C:\User\Default\ccIEVNpa.s 			page 8
+
+
+ 335              		.loc 1 55 5 view .LVU71
+  56:Board/Src/bsp_uart.c ****     va_start(ap, format);
+ 336              		.loc 1 56 5 view .LVU72
+ 337 000a 084B     		ldr	r3, .L24
+ 338 000c 1A60     		str	r2, [r3]
+  57:Board/Src/bsp_uart.c ****     //return length of string 
+  58:Board/Src/bsp_uart.c ****     //返回字符串长度
+  59:Board/Src/bsp_uart.c ****     len = vsprintf((char *)tx_buf, format, ap);
+ 339              		.loc 1 59 5 view .LVU73
+ 340              		.loc 1 59 11 is_stmt 0 view .LVU74
+ 341 000e 084C     		ldr	r4, .L24+4
+ 342 0010 2046     		mov	r0, r4
+ 343 0012 FFF7FEFF 		bl	vsprintf
+ 344              	.LVL31:
+ 345              		.loc 1 59 9 view .LVU75
+ 346 0016 81B2     		uxth	r1, r0
+ 347 0018 064B     		ldr	r3, .L24+8
+ 348 001a 1980     		strh	r1, [r3]	@ movhi
+  60:Board/Src/bsp_uart.c ****     va_end(ap);
+ 349              		.loc 1 60 5 is_stmt 1 view .LVU76
+  61:Board/Src/bsp_uart.c ****     usart1_tx_dma_enable(tx_buf, len);
+ 350              		.loc 1 61 5 view .LVU77
+ 351 001c 2046     		mov	r0, r4
+ 352 001e FFF7FEFF 		bl	usart1_tx_dma_enable
+ 353              	.LVL32:
+  62:Board/Src/bsp_uart.c **** }
+ 354              		.loc 1 62 1 is_stmt 0 view .LVU78
+ 355 0022 BDE81040 		pop	{r4, lr}
+ 356              	.LCFI8:
+ 357              		.cfi_restore 14
+ 358              		.cfi_restore 4
+ 359              		.cfi_def_cfa_offset 16
+ 360 0026 04B0     		add	sp, sp, #16
+ 361              	.LCFI9:
+ 362              		.cfi_restore 3
+ 363              		.cfi_restore 2
+ 364              		.cfi_restore 1
+ 365              		.cfi_restore 0
+ 366              		.cfi_def_cfa_offset 0
+ 367 0028 7047     		bx	lr
+ 368              	.L25:
+ 369 002a 00BF     		.align	2
+ 370              	.L24:
+ 371 002c 00000000 		.word	.LANCHOR0
+ 372 0030 00000000 		.word	.LANCHOR1
+ 373 0034 00000000 		.word	.LANCHOR2
+ 374              		.cfi_endproc
+ 375              	.LFE142:
+ 377              		.section	.bss.ap.2,"aw",%nobits
+ 378              		.align	2
+ 379              		.set	.LANCHOR0,. + 0
+ 382              	ap.2:
+ 383 0000 00000000 		.space	4
+ 384              		.section	.bss.len.0,"aw",%nobits
+ 385              		.align	1
+ 386              		.set	.LANCHOR2,. + 0
+ 389              	len.0:
+ARM GAS  C:\User\Default\ccIEVNpa.s 			page 9
+
+
+ 390 0000 0000     		.space	2
+ 391              		.section	.bss.tx_buf.1,"aw",%nobits
+ 392              		.align	2
+ 393              		.set	.LANCHOR1,. + 0
+ 396              	tx_buf.1:
+ 397 0000 00000000 		.space	256
+ 397      00000000 
+ 397      00000000 
+ 397      00000000 
+ 397      00000000 
+ 398              		.text
+ 399              	.Letext0:
+ 400              		.file 2 "e:\\arm-gnu\\arm\\arm-none-eabi\\include\\machine\\_default_types.h"
+ 401              		.file 3 "e:\\arm-gnu\\arm\\arm-none-eabi\\include\\sys\\_stdint.h"
+ 402              		.file 4 "Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f407xx.h"
+ 403              		.file 5 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h"
+ 404              		.file 6 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma.h"
+ 405              		.file 7 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h"
+ 406              		.file 8 "e:\\arm-gnu\\arm\\lib\\gcc\\arm-none-eabi\\10.3.1\\include\\stdarg.h"
+ 407              		.file 9 "Core/Inc/usart.h"
+ 408              		.file 10 "e:\\arm-gnu\\arm\\arm-none-eabi\\include\\stdio.h"
+ 409              		.file 11 "<built-in>"
+ARM GAS  C:\User\Default\ccIEVNpa.s 			page 10
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 bsp_uart.c
+C:\User\Default\ccIEVNpa.s:20     .text.bsp_uart_send_byte:00000000 $t
+C:\User\Default\ccIEVNpa.s:26     .text.bsp_uart_send_byte:00000000 bsp_uart_send_byte
+C:\User\Default\ccIEVNpa.s:61     .text.bsp_uart_send_byte:00000020 $d
+C:\User\Default\ccIEVNpa.s:66     .text.bsp_uart_send_array:00000000 $t
+C:\User\Default\ccIEVNpa.s:72     .text.bsp_uart_send_array:00000000 bsp_uart_send_array
+C:\User\Default\ccIEVNpa.s:123    .text.bsp_uart_send_string:00000000 $t
+C:\User\Default\ccIEVNpa.s:129    .text.bsp_uart_send_string:00000000 bsp_uart_send_string
+C:\User\Default\ccIEVNpa.s:180    .text.serial_pow:00000000 $t
+C:\User\Default\ccIEVNpa.s:186    .text.serial_pow:00000000 serial_pow
+C:\User\Default\ccIEVNpa.s:228    .text.bsp_uart_send_num:00000000 $t
+C:\User\Default\ccIEVNpa.s:234    .text.bsp_uart_send_num:00000000 bsp_uart_send_num
+C:\User\Default\ccIEVNpa.s:300    .text.bsp_uart_send_num:0000003c $d
+C:\User\Default\ccIEVNpa.s:305    .text.bsp_uart_send_printf:00000000 $t
+C:\User\Default\ccIEVNpa.s:311    .text.bsp_uart_send_printf:00000000 bsp_uart_send_printf
+C:\User\Default\ccIEVNpa.s:371    .text.bsp_uart_send_printf:0000002c $d
+C:\User\Default\ccIEVNpa.s:378    .bss.ap.2:00000000 $d
+C:\User\Default\ccIEVNpa.s:382    .bss.ap.2:00000000 ap.2
+C:\User\Default\ccIEVNpa.s:385    .bss.len.0:00000000 $d
+C:\User\Default\ccIEVNpa.s:389    .bss.len.0:00000000 len.0
+C:\User\Default\ccIEVNpa.s:392    .bss.tx_buf.1:00000000 $d
+C:\User\Default\ccIEVNpa.s:396    .bss.tx_buf.1:00000000 tx_buf.1
+
+UNDEFINED SYMBOLS
+HAL_UART_Transmit
+huart1
+vsprintf
+usart1_tx_dma_enable

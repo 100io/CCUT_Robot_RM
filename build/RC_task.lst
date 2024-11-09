@@ -1,0 +1,1058 @@
+ARM GAS  C:\User\Default\ccKD3mNB.s 			page 1
+
+
+   1              		.cpu cortex-m4
+   2              		.arch armv7e-m
+   3              		.fpu fpv4-sp-d16
+   4              		.eabi_attribute 27, 1
+   5              		.eabi_attribute 28, 1
+   6              		.eabi_attribute 20, 1
+   7              		.eabi_attribute 21, 1
+   8              		.eabi_attribute 23, 3
+   9              		.eabi_attribute 24, 1
+  10              		.eabi_attribute 25, 1
+  11              		.eabi_attribute 26, 1
+  12              		.eabi_attribute 30, 1
+  13              		.eabi_attribute 34, 1
+  14              		.eabi_attribute 18, 4
+  15              		.file	"RC_task.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.section	.text.sbus_to_rc,"ax",%progbits
+  20              		.align	1
+  21              		.syntax unified
+  22              		.thumb
+  23              		.thumb_func
+  25              	sbus_to_rc:
+  26              	.LVL0:
+  27              	.LFB137:
+  28              		.file 1 "App/Src/RC_task.c"
+   1:App/Src/RC_task.c **** #include <main.h>
+   2:App/Src/RC_task.c **** #include "RC_task.h"
+   3:App/Src/RC_task.c **** #include "bsp_usart.h"
+   4:App/Src/RC_task.c **** /* 作者：LWH 时间：2024年11月 目标：遥控器数据处理任务 */
+   5:App/Src/RC_task.c **** /* .c文件代码规范：
+   6:App/Src/RC_task.c ****     1.关于头文件的包含：（1）直接包含main.h，就需要声明hal库的外设句柄
+   7:App/Src/RC_task.c ****                    （2）包含usart.h则无需重新声明句柄，句柄在usart中已经声明�
+   8:App/Src/RC_task.c ****                    （3）不在对应的头文件里面包含main.h为了防止重复包含
+   9:App/Src/RC_task.c ****     2.定义相关的全局变量：定义的相关全局变量只用于这单个文件的全局变
+  10:App/Src/RC_task.c ****     传递，传递参数我们放在头文件里面声明的结构体中，这些都用于参数�
+  11:App/Src/RC_task.c ****     3.对于函数的定义与实现：在头文件中进行声明，.c文件中只写对应函数�
+  12:App/Src/RC_task.c ****     4.必须在.c文件中对句柄进行声明,因为如果在.h中包含main.h并且进行声明�
+  13:App/Src/RC_task.c ****  */
+  14:App/Src/RC_task.c **** /* 定义hal库句柄 */
+  15:App/Src/RC_task.c **** extern UART_HandleTypeDef huart3;
+  16:App/Src/RC_task.c **** extern DMA_HandleTypeDef hdma_usart3_rx;
+  17:App/Src/RC_task.c **** /* 结构体变量声明 */
+  18:App/Src/RC_task.c **** RC_ctrl_t rc_ctrl;
+  19:App/Src/RC_task.c **** const RC_ctrl_t *local_rc_ctrl;
+  20:App/Src/RC_task.c **** /* 当前.c文件局部变量定义 */
+  21:App/Src/RC_task.c **** static uint8_t sbus_rx_buf[2][SBUS_RX_BUF_NUM];
+  22:App/Src/RC_task.c **** 
+  23:App/Src/RC_task.c **** /* 函数的定义和实现 */
+  24:App/Src/RC_task.c **** void RC_task(void const *argument){
+  25:App/Src/RC_task.c ****     RC_init(sbus_rx_buf[0], sbus_rx_buf[1], SBUS_RX_BUF_NUM);//遥控器初始化
+  26:App/Src/RC_task.c ****     usart1_tx_dma_init();
+  27:App/Src/RC_task.c ****     local_rc_ctrl=get_remote_control_point();
+  28:App/Src/RC_task.c ****     while(1){
+  29:App/Src/RC_task.c ****         bsp_uart_send_printf(
+  30:App/Src/RC_task.c **** "**********\r\n\
+ARM GAS  C:\User\Default\ccKD3mNB.s 			page 2
+
+
+  31:App/Src/RC_task.c **** ch0:%d\r\n\
+  32:App/Src/RC_task.c **** ch1:%d\r\n\
+  33:App/Src/RC_task.c **** ch2:%d\r\n\
+  34:App/Src/RC_task.c **** ch3:%d\r\n\
+  35:App/Src/RC_task.c **** ch4:%d\r\n\
+  36:App/Src/RC_task.c **** s1:%d\r\n\
+  37:App/Src/RC_task.c **** s2:%d\r\n\
+  38:App/Src/RC_task.c **** mouse_x:%d\r\n\
+  39:App/Src/RC_task.c **** mouse_y:%d\r\n\
+  40:App/Src/RC_task.c **** press_l:%d\r\n\
+  41:App/Src/RC_task.c **** press_r:%d\r\n\
+  42:App/Src/RC_task.c **** key:%d\r\n\
+  43:App/Src/RC_task.c **** **********\r\n",
+  44:App/Src/RC_task.c ****             local_rc_ctrl->rc.ch[0], local_rc_ctrl->rc.ch[1], local_rc_ctrl->rc.ch[2], local_rc_ctr
+  45:App/Src/RC_task.c ****             local_rc_ctrl->rc.s[0], local_rc_ctrl->rc.s[1],
+  46:App/Src/RC_task.c ****             local_rc_ctrl->mouse.x, local_rc_ctrl->mouse.y,local_rc_ctrl->mouse.z, local_rc_ctrl->m
+  47:App/Src/RC_task.c ****             local_rc_ctrl->key.v);
+  48:App/Src/RC_task.c ****         HAL_Delay(1000);
+  49:App/Src/RC_task.c ****         
+  50:App/Src/RC_task.c ****     }
+  51:App/Src/RC_task.c **** }
+  52:App/Src/RC_task.c **** 
+  53:App/Src/RC_task.c **** 
+  54:App/Src/RC_task.c **** 
+  55:App/Src/RC_task.c **** 
+  56:App/Src/RC_task.c **** 
+  57:App/Src/RC_task.c **** void RC_init(uint8_t *rx1_buf, uint8_t *rx2_buf, uint16_t dma_buf_num)
+  58:App/Src/RC_task.c **** {
+  59:App/Src/RC_task.c ****     //enable the DMA transfer for the receiver request
+  60:App/Src/RC_task.c ****     //使能DMA串口接收
+  61:App/Src/RC_task.c ****     SET_BIT(huart3.Instance->CR3, USART_CR3_DMAR);
+  62:App/Src/RC_task.c **** 
+  63:App/Src/RC_task.c ****     //enalbe idle interrupt
+  64:App/Src/RC_task.c ****     //使能空闲中断
+  65:App/Src/RC_task.c ****     __HAL_UART_ENABLE_IT(&huart3, UART_IT_IDLE);
+  66:App/Src/RC_task.c **** 
+  67:App/Src/RC_task.c ****     //disable DMA
+  68:App/Src/RC_task.c ****     //失效DMA
+  69:App/Src/RC_task.c ****     __HAL_DMA_DISABLE(&hdma_usart3_rx);
+  70:App/Src/RC_task.c ****     while(hdma_usart3_rx.Instance->CR & DMA_SxCR_EN)
+  71:App/Src/RC_task.c ****     {
+  72:App/Src/RC_task.c ****         __HAL_DMA_DISABLE(&hdma_usart3_rx);
+  73:App/Src/RC_task.c ****     }
+  74:App/Src/RC_task.c **** 
+  75:App/Src/RC_task.c ****     hdma_usart3_rx.Instance->PAR = (uint32_t) & (USART3->DR);
+  76:App/Src/RC_task.c ****     //memory buffer 1
+  77:App/Src/RC_task.c ****     //内存缓冲区1
+  78:App/Src/RC_task.c ****     hdma_usart3_rx.Instance->M0AR = (uint32_t)(rx1_buf);
+  79:App/Src/RC_task.c ****     //memory buffer 2
+  80:App/Src/RC_task.c ****     //内存缓冲区2
+  81:App/Src/RC_task.c ****     hdma_usart3_rx.Instance->M1AR = (uint32_t)(rx2_buf);
+  82:App/Src/RC_task.c ****     //data length
+  83:App/Src/RC_task.c ****     //数据长度
+  84:App/Src/RC_task.c ****     hdma_usart3_rx.Instance->NDTR = dma_buf_num;
+  85:App/Src/RC_task.c ****     //enable double memory buffer
+  86:App/Src/RC_task.c ****     //使能双缓冲区
+  87:App/Src/RC_task.c ****     SET_BIT(hdma_usart3_rx.Instance->CR, DMA_SxCR_DBM);
+ARM GAS  C:\User\Default\ccKD3mNB.s 			page 3
+
+
+  88:App/Src/RC_task.c **** 
+  89:App/Src/RC_task.c ****     //enable DMA
+  90:App/Src/RC_task.c ****     //使能DMA
+  91:App/Src/RC_task.c ****     __HAL_DMA_ENABLE(&hdma_usart3_rx);
+  92:App/Src/RC_task.c **** 
+  93:App/Src/RC_task.c **** }
+  94:App/Src/RC_task.c **** /* 获取遥控器数据指针 */
+  95:App/Src/RC_task.c **** const RC_ctrl_t *get_remote_control_point(void)
+  96:App/Src/RC_task.c **** {
+  97:App/Src/RC_task.c ****     return &rc_ctrl;
+  98:App/Src/RC_task.c **** }
+  99:App/Src/RC_task.c **** /* 遥控器数据解析 */
+ 100:App/Src/RC_task.c **** static void sbus_to_rc(volatile const uint8_t *sbus_buf, RC_ctrl_t *rc_ctrl)
+ 101:App/Src/RC_task.c **** {
+  29              		.loc 1 101 1 view -0
+  30              		.cfi_startproc
+  31              		@ args = 0, pretend = 0, frame = 0
+  32              		@ frame_needed = 0, uses_anonymous_args = 0
+ 102:App/Src/RC_task.c ****     if (sbus_buf == NULL || rc_ctrl == NULL)
+  33              		.loc 1 102 5 view .LVU1
+  34              		.loc 1 102 8 is_stmt 0 view .LVU2
+  35 0000 0028     		cmp	r0, #0
+  36 0002 5FD0     		beq	.L4
+  37 0004 0346     		mov	r3, r0
+  38              		.loc 1 102 26 discriminator 1 view .LVU3
+  39 0006 0029     		cmp	r1, #0
+  40 0008 5CD0     		beq	.L4
+ 101:App/Src/RC_task.c ****     if (sbus_buf == NULL || rc_ctrl == NULL)
+  41              		.loc 1 101 1 view .LVU4
+  42 000a 30B5     		push	{r4, r5, lr}
+  43              	.LCFI0:
+  44              		.cfi_def_cfa_offset 12
+  45              		.cfi_offset 4, -12
+  46              		.cfi_offset 5, -8
+  47              		.cfi_offset 14, -4
+ 103:App/Src/RC_task.c ****     {
+ 104:App/Src/RC_task.c ****         return;
+ 105:App/Src/RC_task.c ****     }
+ 106:App/Src/RC_task.c **** 
+ 107:App/Src/RC_task.c ****     rc_ctrl->rc.ch[0] = (sbus_buf[0] | (sbus_buf[1] << 8)) & 0x07ff;        //!< Channel 0
+  48              		.loc 1 107 5 is_stmt 1 view .LVU5
+  49              		.loc 1 107 34 is_stmt 0 view .LVU6
+  50 000c 90F800C0 		ldrb	ip, [r0]	@ zero_extendqisi2
+  51              		.loc 1 107 49 view .LVU7
+  52 0010 4278     		ldrb	r2, [r0, #1]	@ zero_extendqisi2
+  53              		.loc 1 107 38 view .LVU8
+  54 0012 4CEA022C 		orr	ip, ip, r2, lsl #8
+  55              		.loc 1 107 60 view .LVU9
+  56 0016 CCF30A0C 		ubfx	ip, ip, #0, #11
+  57              		.loc 1 107 23 view .LVU10
+  58 001a A1F800C0 		strh	ip, [r1]	@ unaligned
+ 108:App/Src/RC_task.c ****     rc_ctrl->rc.ch[1] = ((sbus_buf[1] >> 3) | (sbus_buf[2] << 5)) & 0x07ff; //!< Channel 1
+  59              		.loc 1 108 5 is_stmt 1 view .LVU11
+  60              		.loc 1 108 35 is_stmt 0 view .LVU12
+  61 001e 4278     		ldrb	r2, [r0, #1]	@ zero_extendqisi2
+  62              		.loc 1 108 56 view .LVU13
+  63 0020 8078     		ldrb	r0, [r0, #2]	@ zero_extendqisi2
+ARM GAS  C:\User\Default\ccKD3mNB.s 			page 4
+
+
+  64              	.LVL1:
+  65              		.loc 1 108 45 view .LVU14
+  66 0022 D208     		lsrs	r2, r2, #3
+  67 0024 42EA4012 		orr	r2, r2, r0, lsl #5
+  68              		.loc 1 108 67 view .LVU15
+  69 0028 C2F30A0E 		ubfx	lr, r2, #0, #11
+  70              		.loc 1 108 23 view .LVU16
+  71 002c A1F802E0 		strh	lr, [r1, #2]	@ unaligned
+ 109:App/Src/RC_task.c ****     rc_ctrl->rc.ch[2] = ((sbus_buf[2] >> 6) | (sbus_buf[3] << 2) |          //!< Channel 2
+  72              		.loc 1 109 5 is_stmt 1 view .LVU17
+  73              		.loc 1 109 35 is_stmt 0 view .LVU18
+  74 0030 9A78     		ldrb	r2, [r3, #2]	@ zero_extendqisi2
+  75              		.loc 1 109 56 view .LVU19
+  76 0032 D878     		ldrb	r0, [r3, #3]	@ zero_extendqisi2
+  77              		.loc 1 109 45 view .LVU20
+  78 0034 9209     		lsrs	r2, r2, #6
+  79 0036 42EA8002 		orr	r2, r2, r0, lsl #2
+ 110:App/Src/RC_task.c ****                          (sbus_buf[4] << 10)) &0x07ff;
+  80              		.loc 1 110 35 view .LVU21
+  81 003a 1879     		ldrb	r0, [r3, #4]	@ zero_extendqisi2
+ 109:App/Src/RC_task.c ****     rc_ctrl->rc.ch[2] = ((sbus_buf[2] >> 6) | (sbus_buf[3] << 2) |          //!< Channel 2
+  82              		.loc 1 109 66 view .LVU22
+  83 003c 42EA8022 		orr	r2, r2, r0, lsl #10
+  84              		.loc 1 110 47 view .LVU23
+  85 0040 C2F30A02 		ubfx	r2, r2, #0, #11
+ 109:App/Src/RC_task.c ****     rc_ctrl->rc.ch[2] = ((sbus_buf[2] >> 6) | (sbus_buf[3] << 2) |          //!< Channel 2
+  86              		.loc 1 109 23 view .LVU24
+  87 0044 8A80     		strh	r2, [r1, #4]	@ unaligned
+ 111:App/Src/RC_task.c ****     rc_ctrl->rc.ch[3] = ((sbus_buf[4] >> 1) | (sbus_buf[5] << 7)) & 0x07ff; //!< Channel 3
+  88              		.loc 1 111 5 is_stmt 1 view .LVU25
+  89              		.loc 1 111 35 is_stmt 0 view .LVU26
+  90 0046 1879     		ldrb	r0, [r3, #4]	@ zero_extendqisi2
+  91              		.loc 1 111 56 view .LVU27
+  92 0048 5C79     		ldrb	r4, [r3, #5]	@ zero_extendqisi2
+  93              		.loc 1 111 45 view .LVU28
+  94 004a 4008     		lsrs	r0, r0, #1
+  95 004c 40EAC410 		orr	r0, r0, r4, lsl #7
+  96              		.loc 1 111 67 view .LVU29
+  97 0050 C0F30A00 		ubfx	r0, r0, #0, #11
+  98              		.loc 1 111 23 view .LVU30
+  99 0054 C880     		strh	r0, [r1, #6]	@ unaligned
+ 112:App/Src/RC_task.c ****     rc_ctrl->rc.s[0] = ((sbus_buf[5] >> 4) & 0x0003);                  //!< Switch left
+ 100              		.loc 1 112 5 is_stmt 1 view .LVU31
+ 101              		.loc 1 112 34 is_stmt 0 view .LVU32
+ 102 0056 5C79     		ldrb	r4, [r3, #5]	@ zero_extendqisi2
+ 103              		.loc 1 112 44 view .LVU33
+ 104 0058 C4F30114 		ubfx	r4, r4, #4, #2
+ 105              		.loc 1 112 22 view .LVU34
+ 106 005c 8C72     		strb	r4, [r1, #10]
+ 113:App/Src/RC_task.c ****     rc_ctrl->rc.s[1] = ((sbus_buf[5] >> 4) & 0x000C) >> 2;                       //!< Switch right
+ 107              		.loc 1 113 5 is_stmt 1 view .LVU35
+ 108              		.loc 1 113 34 is_stmt 0 view .LVU36
+ 109 005e 5C79     		ldrb	r4, [r3, #5]	@ zero_extendqisi2
+ 110              		.loc 1 113 54 view .LVU37
+ 111 0060 A409     		lsrs	r4, r4, #6
+ 112              		.loc 1 113 22 view .LVU38
+ 113 0062 CC72     		strb	r4, [r1, #11]
+ARM GAS  C:\User\Default\ccKD3mNB.s 			page 5
+
+
+ 114:App/Src/RC_task.c ****     rc_ctrl->mouse.x = sbus_buf[6] | (sbus_buf[7] << 8);                    //!< Mouse X axis
+ 114              		.loc 1 114 5 is_stmt 1 view .LVU39
+ 115              		.loc 1 114 32 is_stmt 0 view .LVU40
+ 116 0064 9C79     		ldrb	r4, [r3, #6]	@ zero_extendqisi2
+ 117              		.loc 1 114 47 view .LVU41
+ 118 0066 DD79     		ldrb	r5, [r3, #7]	@ zero_extendqisi2
+ 119              		.loc 1 114 36 view .LVU42
+ 120 0068 44EA0524 		orr	r4, r4, r5, lsl #8
+ 121              		.loc 1 114 22 view .LVU43
+ 122 006c 8C81     		strh	r4, [r1, #12]	@ unaligned
+ 115:App/Src/RC_task.c ****     rc_ctrl->mouse.y = sbus_buf[8] | (sbus_buf[9] << 8);                    //!< Mouse Y axis
+ 123              		.loc 1 115 5 is_stmt 1 view .LVU44
+ 124              		.loc 1 115 32 is_stmt 0 view .LVU45
+ 125 006e 1C7A     		ldrb	r4, [r3, #8]	@ zero_extendqisi2
+ 126              		.loc 1 115 47 view .LVU46
+ 127 0070 5D7A     		ldrb	r5, [r3, #9]	@ zero_extendqisi2
+ 128              		.loc 1 115 36 view .LVU47
+ 129 0072 44EA0524 		orr	r4, r4, r5, lsl #8
+ 130              		.loc 1 115 22 view .LVU48
+ 131 0076 CC81     		strh	r4, [r1, #14]	@ unaligned
+ 116:App/Src/RC_task.c ****     rc_ctrl->mouse.z = sbus_buf[10] | (sbus_buf[11] << 8);                  //!< Mouse Z axis
+ 132              		.loc 1 116 5 is_stmt 1 view .LVU49
+ 133              		.loc 1 116 32 is_stmt 0 view .LVU50
+ 134 0078 9C7A     		ldrb	r4, [r3, #10]	@ zero_extendqisi2
+ 135              		.loc 1 116 48 view .LVU51
+ 136 007a DD7A     		ldrb	r5, [r3, #11]	@ zero_extendqisi2
+ 137              		.loc 1 116 37 view .LVU52
+ 138 007c 44EA0524 		orr	r4, r4, r5, lsl #8
+ 139              		.loc 1 116 22 view .LVU53
+ 140 0080 0C82     		strh	r4, [r1, #16]	@ unaligned
+ 117:App/Src/RC_task.c ****     rc_ctrl->mouse.press_l = sbus_buf[12];                                  //!< Mouse Left Is Pres
+ 141              		.loc 1 117 5 is_stmt 1 view .LVU54
+ 142              		.loc 1 117 28 is_stmt 0 view .LVU55
+ 143 0082 1C7B     		ldrb	r4, [r3, #12]	@ zero_extendqisi2
+ 144 0084 8C74     		strb	r4, [r1, #18]
+ 118:App/Src/RC_task.c ****     rc_ctrl->mouse.press_r = sbus_buf[13];                                  //!< Mouse Right Is Pre
+ 145              		.loc 1 118 5 is_stmt 1 view .LVU56
+ 146              		.loc 1 118 28 is_stmt 0 view .LVU57
+ 147 0086 5C7B     		ldrb	r4, [r3, #13]	@ zero_extendqisi2
+ 148 0088 CC74     		strb	r4, [r1, #19]
+ 119:App/Src/RC_task.c ****     rc_ctrl->key.v = sbus_buf[14] | (sbus_buf[15] << 8);                    //!< KeyBoard value
+ 149              		.loc 1 119 5 is_stmt 1 view .LVU58
+ 150              		.loc 1 119 30 is_stmt 0 view .LVU59
+ 151 008a 9C7B     		ldrb	r4, [r3, #14]	@ zero_extendqisi2
+ 152              		.loc 1 119 46 view .LVU60
+ 153 008c DD7B     		ldrb	r5, [r3, #15]	@ zero_extendqisi2
+ 154              		.loc 1 119 35 view .LVU61
+ 155 008e 44EA0524 		orr	r4, r4, r5, lsl #8
+ 156              		.loc 1 119 20 view .LVU62
+ 157 0092 8C82     		strh	r4, [r1, #20]	@ unaligned
+ 120:App/Src/RC_task.c ****     rc_ctrl->rc.ch[4] = sbus_buf[16] | (sbus_buf[17] << 8);                 //NULL
+ 158              		.loc 1 120 5 is_stmt 1 view .LVU63
+ 159              		.loc 1 120 33 is_stmt 0 view .LVU64
+ 160 0094 1C7C     		ldrb	r4, [r3, #16]	@ zero_extendqisi2
+ 161              		.loc 1 120 49 view .LVU65
+ 162 0096 5B7C     		ldrb	r3, [r3, #17]	@ zero_extendqisi2
+ 163              	.LVL2:
+ARM GAS  C:\User\Default\ccKD3mNB.s 			page 6
+
+
+ 164              		.loc 1 120 38 view .LVU66
+ 165 0098 44EA0323 		orr	r3, r4, r3, lsl #8
+ 166 009c 1CB2     		sxth	r4, r3
+ 167              		.loc 1 120 23 view .LVU67
+ 168 009e 0B81     		strh	r3, [r1, #8]	@ unaligned
+ 121:App/Src/RC_task.c **** 
+ 122:App/Src/RC_task.c ****     rc_ctrl->rc.ch[0] -= RC_CH_VALUE_OFFSET;
+ 169              		.loc 1 122 5 is_stmt 1 view .LVU68
+ 170              		.loc 1 122 23 is_stmt 0 view .LVU69
+ 171 00a0 ACF5806C 		sub	ip, ip, #1024
+ 172 00a4 A1F800C0 		strh	ip, [r1]	@ unaligned
+ 123:App/Src/RC_task.c ****     rc_ctrl->rc.ch[1] -= RC_CH_VALUE_OFFSET;
+ 173              		.loc 1 123 5 is_stmt 1 view .LVU70
+ 174              		.loc 1 123 23 is_stmt 0 view .LVU71
+ 175 00a8 AEF5806E 		sub	lr, lr, #1024
+ 176 00ac A1F802E0 		strh	lr, [r1, #2]	@ unaligned
+ 124:App/Src/RC_task.c ****     rc_ctrl->rc.ch[2] -= RC_CH_VALUE_OFFSET;
+ 177              		.loc 1 124 5 is_stmt 1 view .LVU72
+ 178              		.loc 1 124 23 is_stmt 0 view .LVU73
+ 179 00b0 A2F58062 		sub	r2, r2, #1024
+ 180 00b4 8A80     		strh	r2, [r1, #4]	@ unaligned
+ 125:App/Src/RC_task.c ****     rc_ctrl->rc.ch[3] -= RC_CH_VALUE_OFFSET;
+ 181              		.loc 1 125 5 is_stmt 1 view .LVU74
+ 182              		.loc 1 125 23 is_stmt 0 view .LVU75
+ 183 00b6 A0F58060 		sub	r0, r0, #1024
+ 184 00ba C880     		strh	r0, [r1, #6]	@ unaligned
+ 126:App/Src/RC_task.c ****     rc_ctrl->rc.ch[4] -= RC_CH_VALUE_OFFSET;
+ 185              		.loc 1 126 5 is_stmt 1 view .LVU76
+ 186              		.loc 1 126 23 is_stmt 0 view .LVU77
+ 187 00bc A4F58063 		sub	r3, r4, #1024
+ 188 00c0 0B81     		strh	r3, [r1, #8]	@ unaligned
+ 127:App/Src/RC_task.c **** }
+ 189              		.loc 1 127 1 view .LVU78
+ 190 00c2 30BD     		pop	{r4, r5, pc}
+ 191              	.LVL3:
+ 192              	.L4:
+ 193              	.LCFI1:
+ 194              		.cfi_def_cfa_offset 0
+ 195              		.cfi_restore 4
+ 196              		.cfi_restore 5
+ 197              		.cfi_restore 14
+ 198              		.loc 1 127 1 view .LVU79
+ 199 00c4 7047     		bx	lr
+ 200              		.cfi_endproc
+ 201              	.LFE137:
+ 203              		.section	.text.RC_init,"ax",%progbits
+ 204              		.align	1
+ 205              		.global	RC_init
+ 206              		.syntax unified
+ 207              		.thumb
+ 208              		.thumb_func
+ 210              	RC_init:
+ 211              	.LVL4:
+ 212              	.LFB135:
+  58:App/Src/RC_task.c ****     //enable the DMA transfer for the receiver request
+ 213              		.loc 1 58 1 is_stmt 1 view -0
+ 214              		.cfi_startproc
+ARM GAS  C:\User\Default\ccKD3mNB.s 			page 7
+
+
+ 215              		@ args = 0, pretend = 0, frame = 0
+ 216              		@ frame_needed = 0, uses_anonymous_args = 0
+ 217              		@ link register save eliminated.
+  58:App/Src/RC_task.c ****     //enable the DMA transfer for the receiver request
+ 218              		.loc 1 58 1 is_stmt 0 view .LVU81
+ 219 0000 10B4     		push	{r4}
+ 220              	.LCFI2:
+ 221              		.cfi_def_cfa_offset 4
+ 222              		.cfi_offset 4, -4
+  61:App/Src/RC_task.c **** 
+ 223              		.loc 1 61 5 is_stmt 1 view .LVU82
+ 224 0002 164B     		ldr	r3, .L11
+ 225 0004 1B68     		ldr	r3, [r3]
+ 226 0006 5C69     		ldr	r4, [r3, #20]
+ 227 0008 44F04004 		orr	r4, r4, #64
+ 228 000c 5C61     		str	r4, [r3, #20]
+  65:App/Src/RC_task.c **** 
+ 229              		.loc 1 65 5 view .LVU83
+ 230 000e DC68     		ldr	r4, [r3, #12]
+ 231 0010 44F01004 		orr	r4, r4, #16
+ 232 0014 DC60     		str	r4, [r3, #12]
+  69:App/Src/RC_task.c ****     while(hdma_usart3_rx.Instance->CR & DMA_SxCR_EN)
+ 233              		.loc 1 69 5 view .LVU84
+ 234 0016 124B     		ldr	r3, .L11+4
+ 235 0018 1C68     		ldr	r4, [r3]
+ 236 001a 2368     		ldr	r3, [r4]
+ 237 001c 23F00103 		bic	r3, r3, #1
+ 238 0020 2360     		str	r3, [r4]
+  70:App/Src/RC_task.c ****     {
+ 239              		.loc 1 70 5 view .LVU85
+  70:App/Src/RC_task.c ****     {
+ 240              		.loc 1 70 10 is_stmt 0 view .LVU86
+ 241 0022 03E0     		b	.L8
+ 242              	.L9:
+  72:App/Src/RC_task.c ****     }
+ 243              		.loc 1 72 9 is_stmt 1 view .LVU87
+ 244 0024 1C68     		ldr	r4, [r3]
+ 245 0026 24F00104 		bic	r4, r4, #1
+ 246 002a 1C60     		str	r4, [r3]
+ 247              	.L8:
+  70:App/Src/RC_task.c ****     {
+ 248              		.loc 1 70 10 view .LVU88
+  70:App/Src/RC_task.c ****     {
+ 249              		.loc 1 70 25 is_stmt 0 view .LVU89
+ 250 002c 0C4B     		ldr	r3, .L11+4
+ 251 002e 1B68     		ldr	r3, [r3]
+  70:App/Src/RC_task.c ****     {
+ 252              		.loc 1 70 34 view .LVU90
+ 253 0030 1C68     		ldr	r4, [r3]
+  70:App/Src/RC_task.c ****     {
+ 254              		.loc 1 70 10 view .LVU91
+ 255 0032 14F0010F 		tst	r4, #1
+ 256 0036 F5D1     		bne	.L9
+  75:App/Src/RC_task.c ****     //memory buffer 1
+ 257              		.loc 1 75 5 is_stmt 1 view .LVU92
+  75:App/Src/RC_task.c ****     //memory buffer 1
+ 258              		.loc 1 75 34 is_stmt 0 view .LVU93
+ARM GAS  C:\User\Default\ccKD3mNB.s 			page 8
+
+
+ 259 0038 0A4C     		ldr	r4, .L11+8
+ 260 003a 9C60     		str	r4, [r3, #8]
+  78:App/Src/RC_task.c ****     //memory buffer 2
+ 261              		.loc 1 78 5 is_stmt 1 view .LVU94
+  78:App/Src/RC_task.c ****     //memory buffer 2
+ 262              		.loc 1 78 35 is_stmt 0 view .LVU95
+ 263 003c D860     		str	r0, [r3, #12]
+  81:App/Src/RC_task.c ****     //data length
+ 264              		.loc 1 81 5 is_stmt 1 view .LVU96
+  81:App/Src/RC_task.c ****     //data length
+ 265              		.loc 1 81 35 is_stmt 0 view .LVU97
+ 266 003e 1961     		str	r1, [r3, #16]
+  84:App/Src/RC_task.c ****     //enable double memory buffer
+ 267              		.loc 1 84 5 is_stmt 1 view .LVU98
+  84:App/Src/RC_task.c ****     //enable double memory buffer
+ 268              		.loc 1 84 35 is_stmt 0 view .LVU99
+ 269 0040 5A60     		str	r2, [r3, #4]
+  87:App/Src/RC_task.c **** 
+ 270              		.loc 1 87 5 is_stmt 1 view .LVU100
+ 271 0042 1A68     		ldr	r2, [r3]
+ 272              	.LVL5:
+  87:App/Src/RC_task.c **** 
+ 273              		.loc 1 87 5 is_stmt 0 view .LVU101
+ 274 0044 42F48022 		orr	r2, r2, #262144
+ 275 0048 1A60     		str	r2, [r3]
+  91:App/Src/RC_task.c **** 
+ 276              		.loc 1 91 5 is_stmt 1 view .LVU102
+ 277 004a 054B     		ldr	r3, .L11+4
+ 278 004c 1A68     		ldr	r2, [r3]
+ 279 004e 1368     		ldr	r3, [r2]
+ 280 0050 43F00103 		orr	r3, r3, #1
+ 281 0054 1360     		str	r3, [r2]
+  93:App/Src/RC_task.c **** /* 获取遥控器数据指针 */
+ 282              		.loc 1 93 1 is_stmt 0 view .LVU103
+ 283 0056 5DF8044B 		ldr	r4, [sp], #4
+ 284              	.LCFI3:
+ 285              		.cfi_restore 4
+ 286              		.cfi_def_cfa_offset 0
+ 287 005a 7047     		bx	lr
+ 288              	.L12:
+ 289              		.align	2
+ 290              	.L11:
+ 291 005c 00000000 		.word	huart3
+ 292 0060 00000000 		.word	hdma_usart3_rx
+ 293 0064 04480040 		.word	1073760260
+ 294              		.cfi_endproc
+ 295              	.LFE135:
+ 297              		.section	.text.get_remote_control_point,"ax",%progbits
+ 298              		.align	1
+ 299              		.global	get_remote_control_point
+ 300              		.syntax unified
+ 301              		.thumb
+ 302              		.thumb_func
+ 304              	get_remote_control_point:
+ 305              	.LFB136:
+  96:App/Src/RC_task.c ****     return &rc_ctrl;
+ 306              		.loc 1 96 1 is_stmt 1 view -0
+ARM GAS  C:\User\Default\ccKD3mNB.s 			page 9
+
+
+ 307              		.cfi_startproc
+ 308              		@ args = 0, pretend = 0, frame = 0
+ 309              		@ frame_needed = 0, uses_anonymous_args = 0
+ 310              		@ link register save eliminated.
+  97:App/Src/RC_task.c **** }
+ 311              		.loc 1 97 5 view .LVU105
+  98:App/Src/RC_task.c **** /* 遥控器数据解析 */
+ 312              		.loc 1 98 1 is_stmt 0 view .LVU106
+ 313 0000 0048     		ldr	r0, .L14
+ 314 0002 7047     		bx	lr
+ 315              	.L15:
+ 316              		.align	2
+ 317              	.L14:
+ 318 0004 00000000 		.word	.LANCHOR0
+ 319              		.cfi_endproc
+ 320              	.LFE136:
+ 322              		.section	.rodata.RC_task.str1.4,"aMS",%progbits,1
+ 323              		.align	2
+ 324              	.LC0:
+ 325 0000 2A2A2A2A 		.ascii	"**********\015\012ch0:%d\015\012ch1:%d\015\012ch2:%"
+ 325      2A2A2A2A 
+ 325      2A2A0D0A 
+ 325      6368303A 
+ 325      25640D0A 
+ 326 0021 640D0A63 		.ascii	"d\015\012ch3:%d\015\012ch4:%d\015\012s1:%d\015\012s"
+ 326      68333A25 
+ 326      640D0A63 
+ 326      68343A25 
+ 326      640D0A73 
+ 327 003c 323A2564 		.ascii	"2:%d\015\012mouse_x:%d\015\012mouse_y:%d\015\012pre"
+ 327      0D0A6D6F 
+ 327      7573655F 
+ 327      783A2564 
+ 327      0D0A6D6F 
+ 328 005d 73735F6C 		.ascii	"ss_l:%d\015\012press_r:%d\015\012key:%d\015\012****"
+ 328      3A25640D 
+ 328      0A707265 
+ 328      73735F72 
+ 328      3A25640D 
+ 329 007e 2A2A2A2A 		.ascii	"******\015\012\000"
+ 329      2A2A0D0A 
+ 329      00
+ 330              		.section	.text.RC_task,"ax",%progbits
+ 331              		.align	1
+ 332              		.global	RC_task
+ 333              		.syntax unified
+ 334              		.thumb
+ 335              		.thumb_func
+ 337              	RC_task:
+ 338              	.LVL6:
+ 339              	.LFB134:
+  24:App/Src/RC_task.c ****     RC_init(sbus_rx_buf[0], sbus_rx_buf[1], SBUS_RX_BUF_NUM);//遥控器初始化
+ 340              		.loc 1 24 35 is_stmt 1 view -0
+ 341              		.cfi_startproc
+ 342              		@ Volatile: function does not return.
+ 343              		@ args = 0, pretend = 0, frame = 0
+ 344              		@ frame_needed = 0, uses_anonymous_args = 0
+ARM GAS  C:\User\Default\ccKD3mNB.s 			page 10
+
+
+  24:App/Src/RC_task.c ****     RC_init(sbus_rx_buf[0], sbus_rx_buf[1], SBUS_RX_BUF_NUM);//遥控器初始化
+ 345              		.loc 1 24 35 is_stmt 0 view .LVU108
+ 346 0000 80B5     		push	{r7, lr}
+ 347              	.LCFI4:
+ 348              		.cfi_def_cfa_offset 8
+ 349              		.cfi_offset 7, -8
+ 350              		.cfi_offset 14, -4
+ 351 0002 8AB0     		sub	sp, sp, #40
+ 352              	.LCFI5:
+ 353              		.cfi_def_cfa_offset 48
+  25:App/Src/RC_task.c ****     usart1_tx_dma_init();
+ 354              		.loc 1 25 5 is_stmt 1 view .LVU109
+ 355 0004 1D48     		ldr	r0, .L19
+ 356              	.LVL7:
+  25:App/Src/RC_task.c ****     usart1_tx_dma_init();
+ 357              		.loc 1 25 5 is_stmt 0 view .LVU110
+ 358 0006 2422     		movs	r2, #36
+ 359 0008 8118     		adds	r1, r0, r2
+ 360 000a FFF7FEFF 		bl	RC_init
+ 361              	.LVL8:
+  26:App/Src/RC_task.c ****     local_rc_ctrl=get_remote_control_point();
+ 362              		.loc 1 26 5 is_stmt 1 view .LVU111
+ 363 000e FFF7FEFF 		bl	usart1_tx_dma_init
+ 364              	.LVL9:
+  27:App/Src/RC_task.c ****     while(1){
+ 365              		.loc 1 27 5 view .LVU112
+  27:App/Src/RC_task.c ****     while(1){
+ 366              		.loc 1 27 19 is_stmt 0 view .LVU113
+ 367 0012 FFF7FEFF 		bl	get_remote_control_point
+ 368              	.LVL10:
+  27:App/Src/RC_task.c ****     while(1){
+ 369              		.loc 1 27 18 view .LVU114
+ 370 0016 1A4B     		ldr	r3, .L19+4
+ 371 0018 1860     		str	r0, [r3]
+ 372              	.L17:
+  28:App/Src/RC_task.c ****         bsp_uart_send_printf(
+ 373              		.loc 1 28 5 is_stmt 1 discriminator 1 view .LVU115
+  29:App/Src/RC_task.c **** "**********\r\n\
+ 374              		.loc 1 29 9 discriminator 1 view .LVU116
+  44:App/Src/RC_task.c ****             local_rc_ctrl->rc.s[0], local_rc_ctrl->rc.s[1],
+ 375              		.loc 1 44 26 is_stmt 0 discriminator 1 view .LVU117
+ 376 001a 194B     		ldr	r3, .L19+4
+ 377 001c 1868     		ldr	r0, [r3]
+  44:App/Src/RC_task.c ****             local_rc_ctrl->rc.s[0], local_rc_ctrl->rc.s[1],
+ 378              		.loc 1 44 33 discriminator 1 view .LVU118
+ 379 001e B0F90010 		ldrsh	r1, [r0]	@ unaligned
+  44:App/Src/RC_task.c ****             local_rc_ctrl->rc.s[0], local_rc_ctrl->rc.s[1],
+ 380              		.loc 1 44 58 discriminator 1 view .LVU119
+ 381 0022 B0F90220 		ldrsh	r2, [r0, #2]	@ unaligned
+  44:App/Src/RC_task.c ****             local_rc_ctrl->rc.s[0], local_rc_ctrl->rc.s[1],
+ 382              		.loc 1 44 83 discriminator 1 view .LVU120
+ 383 0026 B0F90430 		ldrsh	r3, [r0, #4]	@ unaligned
+  44:App/Src/RC_task.c ****             local_rc_ctrl->rc.s[0], local_rc_ctrl->rc.s[1],
+ 384              		.loc 1 44 108 discriminator 1 view .LVU121
+ 385 002a B0F90640 		ldrsh	r4, [r0, #6]	@ unaligned
+  44:App/Src/RC_task.c ****             local_rc_ctrl->rc.s[0], local_rc_ctrl->rc.s[1],
+ 386              		.loc 1 44 133 discriminator 1 view .LVU122
+ARM GAS  C:\User\Default\ccKD3mNB.s 			page 11
+
+
+ 387 002e B0F90850 		ldrsh	r5, [r0, #8]	@ unaligned
+  45:App/Src/RC_task.c ****             local_rc_ctrl->mouse.x, local_rc_ctrl->mouse.y,local_rc_ctrl->mouse.z, local_rc_ctrl->m
+ 388              		.loc 1 45 32 discriminator 1 view .LVU123
+ 389 0032 867A     		ldrb	r6, [r0, #10]	@ zero_extendqisi2
+  45:App/Src/RC_task.c ****             local_rc_ctrl->mouse.x, local_rc_ctrl->mouse.y,local_rc_ctrl->mouse.z, local_rc_ctrl->m
+ 390              		.loc 1 45 56 discriminator 1 view .LVU124
+ 391 0034 C77A     		ldrb	r7, [r0, #11]	@ zero_extendqisi2
+  46:App/Src/RC_task.c ****             local_rc_ctrl->key.v);
+ 392              		.loc 1 46 33 discriminator 1 view .LVU125
+ 393 0036 B0F90CC0 		ldrsh	ip, [r0, #12]	@ unaligned
+  46:App/Src/RC_task.c ****             local_rc_ctrl->key.v);
+ 394              		.loc 1 46 57 discriminator 1 view .LVU126
+ 395 003a B0F90EE0 		ldrsh	lr, [r0, #14]	@ unaligned
+  46:App/Src/RC_task.c ****             local_rc_ctrl->key.v);
+ 396              		.loc 1 46 80 discriminator 1 view .LVU127
+ 397 003e B0F91080 		ldrsh	r8, [r0, #16]	@ unaligned
+  46:App/Src/RC_task.c ****             local_rc_ctrl->key.v);
+ 398              		.loc 1 46 104 discriminator 1 view .LVU128
+ 399 0042 90F81290 		ldrb	r9, [r0, #18]	@ zero_extendqisi2
+  46:App/Src/RC_task.c ****             local_rc_ctrl->key.v);
+ 400              		.loc 1 46 134 discriminator 1 view .LVU129
+ 401 0046 90F813A0 		ldrb	r10, [r0, #19]	@ zero_extendqisi2
+  47:App/Src/RC_task.c ****         HAL_Delay(1000);
+ 402              		.loc 1 47 31 discriminator 1 view .LVU130
+ 403 004a 808A     		ldrh	r0, [r0, #20]	@ unaligned
+  29:App/Src/RC_task.c **** "**********\r\n\
+ 404              		.loc 1 29 9 discriminator 1 view .LVU131
+ 405 004c 0990     		str	r0, [sp, #36]
+ 406 004e CDF820A0 		str	r10, [sp, #32]
+ 407 0052 CDF81C90 		str	r9, [sp, #28]
+ 408 0056 CDF81880 		str	r8, [sp, #24]
+ 409 005a CDF814E0 		str	lr, [sp, #20]
+ 410 005e CDF810C0 		str	ip, [sp, #16]
+ 411 0062 0397     		str	r7, [sp, #12]
+ 412 0064 0296     		str	r6, [sp, #8]
+ 413 0066 0195     		str	r5, [sp, #4]
+ 414 0068 0094     		str	r4, [sp]
+ 415 006a 0648     		ldr	r0, .L19+8
+ 416 006c FFF7FEFF 		bl	bsp_uart_send_printf
+ 417              	.LVL11:
+  48:App/Src/RC_task.c ****         
+ 418              		.loc 1 48 9 is_stmt 1 discriminator 1 view .LVU132
+ 419 0070 4FF47A70 		mov	r0, #1000
+ 420 0074 FFF7FEFF 		bl	HAL_Delay
+ 421              	.LVL12:
+  28:App/Src/RC_task.c ****         bsp_uart_send_printf(
+ 422              		.loc 1 28 10 discriminator 1 view .LVU133
+ 423 0078 CFE7     		b	.L17
+ 424              	.L20:
+ 425 007a 00BF     		.align	2
+ 426              	.L19:
+ 427 007c 00000000 		.word	.LANCHOR1
+ 428 0080 00000000 		.word	.LANCHOR2
+ 429 0084 00000000 		.word	.LC0
+ 430              		.cfi_endproc
+ 431              	.LFE134:
+ 433              		.section	.text.USART3_IRQHandler,"ax",%progbits
+ARM GAS  C:\User\Default\ccKD3mNB.s 			page 12
+
+
+ 434              		.align	1
+ 435              		.global	USART3_IRQHandler
+ 436              		.syntax unified
+ 437              		.thumb
+ 438              		.thumb_func
+ 440              	USART3_IRQHandler:
+ 441              	.LFB138:
+ 128:App/Src/RC_task.c **** //串口中断
+ 129:App/Src/RC_task.c **** void USART3_IRQHandler(void)
+ 130:App/Src/RC_task.c **** {
+ 442              		.loc 1 130 1 view -0
+ 443              		.cfi_startproc
+ 444              		@ args = 0, pretend = 0, frame = 8
+ 445              		@ frame_needed = 0, uses_anonymous_args = 0
+ 446 0000 00B5     		push	{lr}
+ 447              	.LCFI6:
+ 448              		.cfi_def_cfa_offset 4
+ 449              		.cfi_offset 14, -4
+ 450 0002 83B0     		sub	sp, sp, #12
+ 451              	.LCFI7:
+ 452              		.cfi_def_cfa_offset 16
+ 131:App/Src/RC_task.c ****     if(huart3.Instance->SR & UART_FLAG_RXNE)//接收到数据
+ 453              		.loc 1 131 5 view .LVU135
+ 454              		.loc 1 131 14 is_stmt 0 view .LVU136
+ 455 0004 2F4B     		ldr	r3, .L26
+ 456 0006 1B68     		ldr	r3, [r3]
+ 457              		.loc 1 131 23 view .LVU137
+ 458 0008 1A68     		ldr	r2, [r3]
+ 459              		.loc 1 131 7 view .LVU138
+ 460 000a 12F0200F 		tst	r2, #32
+ 461 000e 09D0     		beq	.L22
+ 132:App/Src/RC_task.c ****     {
+ 133:App/Src/RC_task.c ****         __HAL_UART_CLEAR_PEFLAG(&huart3);
+ 462              		.loc 1 133 9 is_stmt 1 view .LVU139
+ 463              	.LBB2:
+ 464              		.loc 1 133 9 view .LVU140
+ 465 0010 0022     		movs	r2, #0
+ 466 0012 0092     		str	r2, [sp]
+ 467              		.loc 1 133 9 view .LVU141
+ 468 0014 1A68     		ldr	r2, [r3]
+ 469 0016 0092     		str	r2, [sp]
+ 470              		.loc 1 133 9 view .LVU142
+ 471 0018 5B68     		ldr	r3, [r3, #4]
+ 472 001a 0093     		str	r3, [sp]
+ 473              		.loc 1 133 9 view .LVU143
+ 474 001c 009B     		ldr	r3, [sp]
+ 475              	.LBE2:
+ 476              		.loc 1 133 9 view .LVU144
+ 477              	.L21:
+ 134:App/Src/RC_task.c ****     }
+ 135:App/Src/RC_task.c ****     else if(USART3->SR & UART_FLAG_IDLE)
+ 136:App/Src/RC_task.c ****     {
+ 137:App/Src/RC_task.c ****         static uint16_t this_time_rx_len = 0;
+ 138:App/Src/RC_task.c **** 
+ 139:App/Src/RC_task.c ****         __HAL_UART_CLEAR_PEFLAG(&huart3);
+ 140:App/Src/RC_task.c **** 
+ 141:App/Src/RC_task.c ****         if ((hdma_usart3_rx.Instance->CR & DMA_SxCR_CT) == RESET)
+ARM GAS  C:\User\Default\ccKD3mNB.s 			page 13
+
+
+ 142:App/Src/RC_task.c ****         {
+ 143:App/Src/RC_task.c ****             /* Current memory buffer used is Memory 0 */
+ 144:App/Src/RC_task.c ****     
+ 145:App/Src/RC_task.c ****             //disable DMA
+ 146:App/Src/RC_task.c ****             //失效DMA
+ 147:App/Src/RC_task.c ****             __HAL_DMA_DISABLE(&hdma_usart3_rx);
+ 148:App/Src/RC_task.c **** 
+ 149:App/Src/RC_task.c ****             //get receive data length, length = set_data_length - remain_length
+ 150:App/Src/RC_task.c ****             //获取接收数据长度,长度 = 设定长度 - 剩余长度
+ 151:App/Src/RC_task.c ****             this_time_rx_len = SBUS_RX_BUF_NUM - hdma_usart3_rx.Instance->NDTR;
+ 152:App/Src/RC_task.c **** 
+ 153:App/Src/RC_task.c ****             //reset set_data_lenght
+ 154:App/Src/RC_task.c ****             //重新设定数据长度
+ 155:App/Src/RC_task.c ****             hdma_usart3_rx.Instance->NDTR = SBUS_RX_BUF_NUM;
+ 156:App/Src/RC_task.c **** 
+ 157:App/Src/RC_task.c ****             //set memory buffer 1
+ 158:App/Src/RC_task.c ****             //设定缓冲区1
+ 159:App/Src/RC_task.c ****             hdma_usart3_rx.Instance->CR |= DMA_SxCR_CT;
+ 160:App/Src/RC_task.c ****             
+ 161:App/Src/RC_task.c ****             //enable DMA
+ 162:App/Src/RC_task.c ****             //使能DMA
+ 163:App/Src/RC_task.c ****             __HAL_DMA_ENABLE(&hdma_usart3_rx);
+ 164:App/Src/RC_task.c **** 
+ 165:App/Src/RC_task.c ****             if(this_time_rx_len == RC_FRAME_LENGTH)
+ 166:App/Src/RC_task.c ****             {
+ 167:App/Src/RC_task.c ****                 sbus_to_rc(sbus_rx_buf[0], &rc_ctrl);
+ 168:App/Src/RC_task.c ****             }
+ 169:App/Src/RC_task.c ****         }
+ 170:App/Src/RC_task.c ****         else
+ 171:App/Src/RC_task.c ****         {
+ 172:App/Src/RC_task.c ****             /* Current memory buffer used is Memory 1 */
+ 173:App/Src/RC_task.c ****             //disable DMA
+ 174:App/Src/RC_task.c ****             //失效DMA
+ 175:App/Src/RC_task.c ****             __HAL_DMA_DISABLE(&hdma_usart3_rx);
+ 176:App/Src/RC_task.c **** 
+ 177:App/Src/RC_task.c ****             //get receive data length, length = set_data_length - remain_length
+ 178:App/Src/RC_task.c ****             //获取接收数据长度,长度 = 设定长度 - 剩余长度
+ 179:App/Src/RC_task.c ****             this_time_rx_len = SBUS_RX_BUF_NUM - hdma_usart3_rx.Instance->NDTR;
+ 180:App/Src/RC_task.c **** 
+ 181:App/Src/RC_task.c ****             //reset set_data_lenght
+ 182:App/Src/RC_task.c ****             //重新设定数据长度
+ 183:App/Src/RC_task.c ****             hdma_usart3_rx.Instance->NDTR = SBUS_RX_BUF_NUM;
+ 184:App/Src/RC_task.c **** 
+ 185:App/Src/RC_task.c ****             //set memory buffer 0
+ 186:App/Src/RC_task.c ****             //设定缓冲区0
+ 187:App/Src/RC_task.c ****             DMA1_Stream1->CR &= ~(DMA_SxCR_CT);
+ 188:App/Src/RC_task.c ****             
+ 189:App/Src/RC_task.c ****             //enable DMA
+ 190:App/Src/RC_task.c ****             //使能DMA
+ 191:App/Src/RC_task.c ****             __HAL_DMA_ENABLE(&hdma_usart3_rx);
+ 192:App/Src/RC_task.c **** 
+ 193:App/Src/RC_task.c ****             if(this_time_rx_len == RC_FRAME_LENGTH)
+ 194:App/Src/RC_task.c ****             {
+ 195:App/Src/RC_task.c ****                 //处理遥控器数据
+ 196:App/Src/RC_task.c ****                 sbus_to_rc(sbus_rx_buf[1], &rc_ctrl);
+ 197:App/Src/RC_task.c ****             }
+ 198:App/Src/RC_task.c ****         }
+ARM GAS  C:\User\Default\ccKD3mNB.s 			page 14
+
+
+ 199:App/Src/RC_task.c ****     }
+ 200:App/Src/RC_task.c **** }
+ 478              		.loc 1 200 1 is_stmt 0 view .LVU145
+ 479 001e 03B0     		add	sp, sp, #12
+ 480              	.LCFI8:
+ 481              		.cfi_remember_state
+ 482              		.cfi_def_cfa_offset 4
+ 483              		@ sp needed
+ 484 0020 5DF804FB 		ldr	pc, [sp], #4
+ 485              	.L22:
+ 486              	.LCFI9:
+ 487              		.cfi_restore_state
+ 135:App/Src/RC_task.c ****     {
+ 488              		.loc 1 135 10 is_stmt 1 view .LVU146
+ 135:App/Src/RC_task.c ****     {
+ 489              		.loc 1 135 19 is_stmt 0 view .LVU147
+ 490 0024 284A     		ldr	r2, .L26+4
+ 491 0026 1268     		ldr	r2, [r2]
+ 135:App/Src/RC_task.c ****     {
+ 492              		.loc 1 135 12 view .LVU148
+ 493 0028 12F0100F 		tst	r2, #16
+ 494 002c F7D0     		beq	.L21
+ 495              	.LBB3:
+ 137:App/Src/RC_task.c **** 
+ 496              		.loc 1 137 9 is_stmt 1 view .LVU149
+ 139:App/Src/RC_task.c **** 
+ 497              		.loc 1 139 9 view .LVU150
+ 498              	.LBB4:
+ 139:App/Src/RC_task.c **** 
+ 499              		.loc 1 139 9 view .LVU151
+ 500 002e 0022     		movs	r2, #0
+ 501 0030 0192     		str	r2, [sp, #4]
+ 139:App/Src/RC_task.c **** 
+ 502              		.loc 1 139 9 view .LVU152
+ 503 0032 1A68     		ldr	r2, [r3]
+ 504 0034 0192     		str	r2, [sp, #4]
+ 139:App/Src/RC_task.c **** 
+ 505              		.loc 1 139 9 view .LVU153
+ 506 0036 5B68     		ldr	r3, [r3, #4]
+ 507 0038 0193     		str	r3, [sp, #4]
+ 139:App/Src/RC_task.c **** 
+ 508              		.loc 1 139 9 view .LVU154
+ 509 003a 019B     		ldr	r3, [sp, #4]
+ 510              	.LBE4:
+ 139:App/Src/RC_task.c **** 
+ 511              		.loc 1 139 9 view .LVU155
+ 141:App/Src/RC_task.c ****         {
+ 512              		.loc 1 141 9 view .LVU156
+ 141:App/Src/RC_task.c ****         {
+ 513              		.loc 1 141 28 is_stmt 0 view .LVU157
+ 514 003c 234B     		ldr	r3, .L26+8
+ 515 003e 1B68     		ldr	r3, [r3]
+ 141:App/Src/RC_task.c ****         {
+ 516              		.loc 1 141 37 view .LVU158
+ 517 0040 1A68     		ldr	r2, [r3]
+ 141:App/Src/RC_task.c ****         {
+ 518              		.loc 1 141 12 view .LVU159
+ARM GAS  C:\User\Default\ccKD3mNB.s 			page 15
+
+
+ 519 0042 12F4002F 		tst	r2, #524288
+ 520 0046 1DD1     		bne	.L24
+ 147:App/Src/RC_task.c **** 
+ 521              		.loc 1 147 13 is_stmt 1 view .LVU160
+ 522 0048 1A68     		ldr	r2, [r3]
+ 523 004a 22F00102 		bic	r2, r2, #1
+ 524 004e 1A60     		str	r2, [r3]
+ 151:App/Src/RC_task.c **** 
+ 525              		.loc 1 151 13 view .LVU161
+ 151:App/Src/RC_task.c **** 
+ 526              		.loc 1 151 64 is_stmt 0 view .LVU162
+ 527 0050 1E48     		ldr	r0, .L26+8
+ 528 0052 0268     		ldr	r2, [r0]
+ 151:App/Src/RC_task.c **** 
+ 529              		.loc 1 151 73 view .LVU163
+ 530 0054 5368     		ldr	r3, [r2, #4]
+ 151:App/Src/RC_task.c **** 
+ 531              		.loc 1 151 48 view .LVU164
+ 532 0056 C3F12403 		rsb	r3, r3, #36
+ 533 005a 9BB2     		uxth	r3, r3
+ 151:App/Src/RC_task.c **** 
+ 534              		.loc 1 151 30 view .LVU165
+ 535 005c 1C49     		ldr	r1, .L26+12
+ 536 005e 0B80     		strh	r3, [r1]	@ movhi
+ 155:App/Src/RC_task.c **** 
+ 537              		.loc 1 155 13 is_stmt 1 view .LVU166
+ 155:App/Src/RC_task.c **** 
+ 538              		.loc 1 155 43 is_stmt 0 view .LVU167
+ 539 0060 2421     		movs	r1, #36
+ 540 0062 5160     		str	r1, [r2, #4]
+ 159:App/Src/RC_task.c ****             
+ 541              		.loc 1 159 13 is_stmt 1 view .LVU168
+ 159:App/Src/RC_task.c ****             
+ 542              		.loc 1 159 41 is_stmt 0 view .LVU169
+ 543 0064 1168     		ldr	r1, [r2]
+ 544 0066 41F40021 		orr	r1, r1, #524288
+ 545 006a 1160     		str	r1, [r2]
+ 163:App/Src/RC_task.c **** 
+ 546              		.loc 1 163 13 is_stmt 1 view .LVU170
+ 547 006c 0168     		ldr	r1, [r0]
+ 548 006e 0A68     		ldr	r2, [r1]
+ 549 0070 42F00102 		orr	r2, r2, #1
+ 550 0074 0A60     		str	r2, [r1]
+ 165:App/Src/RC_task.c ****             {
+ 551              		.loc 1 165 13 view .LVU171
+ 165:App/Src/RC_task.c ****             {
+ 552              		.loc 1 165 15 is_stmt 0 view .LVU172
+ 553 0076 122B     		cmp	r3, #18
+ 554 0078 D1D1     		bne	.L21
+ 167:App/Src/RC_task.c ****             }
+ 555              		.loc 1 167 17 is_stmt 1 view .LVU173
+ 556 007a 1649     		ldr	r1, .L26+16
+ 557 007c 1648     		ldr	r0, .L26+20
+ 558 007e FFF7FEFF 		bl	sbus_to_rc
+ 559              	.LVL13:
+ 560 0082 CCE7     		b	.L21
+ 561              	.L24:
+ARM GAS  C:\User\Default\ccKD3mNB.s 			page 16
+
+
+ 175:App/Src/RC_task.c **** 
+ 562              		.loc 1 175 13 view .LVU174
+ 563 0084 1A68     		ldr	r2, [r3]
+ 564 0086 22F00102 		bic	r2, r2, #1
+ 565 008a 1A60     		str	r2, [r3]
+ 179:App/Src/RC_task.c **** 
+ 566              		.loc 1 179 13 view .LVU175
+ 179:App/Src/RC_task.c **** 
+ 567              		.loc 1 179 64 is_stmt 0 view .LVU176
+ 568 008c 0F49     		ldr	r1, .L26+8
+ 569 008e 0868     		ldr	r0, [r1]
+ 179:App/Src/RC_task.c **** 
+ 570              		.loc 1 179 73 view .LVU177
+ 571 0090 4368     		ldr	r3, [r0, #4]
+ 179:App/Src/RC_task.c **** 
+ 572              		.loc 1 179 48 view .LVU178
+ 573 0092 C3F12403 		rsb	r3, r3, #36
+ 179:App/Src/RC_task.c **** 
+ 574              		.loc 1 179 30 view .LVU179
+ 575 0096 0E4A     		ldr	r2, .L26+12
+ 576 0098 1380     		strh	r3, [r2]	@ movhi
+ 183:App/Src/RC_task.c **** 
+ 577              		.loc 1 183 13 is_stmt 1 view .LVU180
+ 183:App/Src/RC_task.c **** 
+ 578              		.loc 1 183 43 is_stmt 0 view .LVU181
+ 579 009a 2423     		movs	r3, #36
+ 580 009c 4360     		str	r3, [r0, #4]
+ 187:App/Src/RC_task.c ****             
+ 581              		.loc 1 187 13 is_stmt 1 view .LVU182
+ 187:App/Src/RC_task.c ****             
+ 582              		.loc 1 187 30 is_stmt 0 view .LVU183
+ 583 009e 0F48     		ldr	r0, .L26+24
+ 584 00a0 836A     		ldr	r3, [r0, #40]
+ 585 00a2 23F40023 		bic	r3, r3, #524288
+ 586 00a6 8362     		str	r3, [r0, #40]
+ 191:App/Src/RC_task.c **** 
+ 587              		.loc 1 191 13 is_stmt 1 view .LVU184
+ 588 00a8 0968     		ldr	r1, [r1]
+ 589 00aa 0B68     		ldr	r3, [r1]
+ 590 00ac 43F00103 		orr	r3, r3, #1
+ 591 00b0 0B60     		str	r3, [r1]
+ 193:App/Src/RC_task.c ****             {
+ 592              		.loc 1 193 13 view .LVU185
+ 193:App/Src/RC_task.c ****             {
+ 593              		.loc 1 193 33 is_stmt 0 view .LVU186
+ 594 00b2 1388     		ldrh	r3, [r2]
+ 193:App/Src/RC_task.c ****             {
+ 595              		.loc 1 193 15 view .LVU187
+ 596 00b4 122B     		cmp	r3, #18
+ 597 00b6 B2D1     		bne	.L21
+ 196:App/Src/RC_task.c ****             }
+ 598              		.loc 1 196 17 is_stmt 1 view .LVU188
+ 599 00b8 0649     		ldr	r1, .L26+16
+ 600 00ba 0948     		ldr	r0, .L26+28
+ 601 00bc FFF7FEFF 		bl	sbus_to_rc
+ 602              	.LVL14:
+ 603              	.LBE3:
+ARM GAS  C:\User\Default\ccKD3mNB.s 			page 17
+
+
+ 604              		.loc 1 200 1 is_stmt 0 view .LVU189
+ 605 00c0 ADE7     		b	.L21
+ 606              	.L27:
+ 607 00c2 00BF     		.align	2
+ 608              	.L26:
+ 609 00c4 00000000 		.word	huart3
+ 610 00c8 00480040 		.word	1073760256
+ 611 00cc 00000000 		.word	hdma_usart3_rx
+ 612 00d0 00000000 		.word	.LANCHOR3
+ 613 00d4 00000000 		.word	.LANCHOR0
+ 614 00d8 00000000 		.word	.LANCHOR1
+ 615 00dc 00600240 		.word	1073897472
+ 616 00e0 24000000 		.word	.LANCHOR1+36
+ 617              		.cfi_endproc
+ 618              	.LFE138:
+ 620              		.global	local_rc_ctrl
+ 621              		.global	rc_ctrl
+ 622              		.section	.bss.local_rc_ctrl,"aw",%nobits
+ 623              		.align	2
+ 624              		.set	.LANCHOR2,. + 0
+ 627              	local_rc_ctrl:
+ 628 0000 00000000 		.space	4
+ 629              		.section	.bss.rc_ctrl,"aw",%nobits
+ 630              		.align	2
+ 631              		.set	.LANCHOR0,. + 0
+ 634              	rc_ctrl:
+ 635 0000 00000000 		.space	22
+ 635      00000000 
+ 635      00000000 
+ 635      00000000 
+ 635      00000000 
+ 636              		.section	.bss.sbus_rx_buf,"aw",%nobits
+ 637              		.align	2
+ 638              		.set	.LANCHOR1,. + 0
+ 641              	sbus_rx_buf:
+ 642 0000 00000000 		.space	72
+ 642      00000000 
+ 642      00000000 
+ 642      00000000 
+ 642      00000000 
+ 643              		.section	.bss.this_time_rx_len.0,"aw",%nobits
+ 644              		.align	1
+ 645              		.set	.LANCHOR3,. + 0
+ 648              	this_time_rx_len.0:
+ 649 0000 0000     		.space	2
+ 650              		.text
+ 651              	.Letext0:
+ 652              		.file 2 "e:\\arm-gnu\\arm\\arm-none-eabi\\include\\machine\\_default_types.h"
+ 653              		.file 3 "e:\\arm-gnu\\arm\\arm-none-eabi\\include\\sys\\_stdint.h"
+ 654              		.file 4 "Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f407xx.h"
+ 655              		.file 5 "Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f4xx.h"
+ 656              		.file 6 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h"
+ 657              		.file 7 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma.h"
+ 658              		.file 8 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h"
+ 659              		.file 9 "App/Inc/RC_task.h"
+ 660              		.file 10 "Board/Inc/bsp_usart.h"
+ 661              		.file 11 "Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h"
+ARM GAS  C:\User\Default\ccKD3mNB.s 			page 18
+
+
+ARM GAS  C:\User\Default\ccKD3mNB.s 			page 19
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 RC_task.c
+C:\User\Default\ccKD3mNB.s:20     .text.sbus_to_rc:00000000 $t
+C:\User\Default\ccKD3mNB.s:25     .text.sbus_to_rc:00000000 sbus_to_rc
+C:\User\Default\ccKD3mNB.s:204    .text.RC_init:00000000 $t
+C:\User\Default\ccKD3mNB.s:210    .text.RC_init:00000000 RC_init
+C:\User\Default\ccKD3mNB.s:291    .text.RC_init:0000005c $d
+C:\User\Default\ccKD3mNB.s:298    .text.get_remote_control_point:00000000 $t
+C:\User\Default\ccKD3mNB.s:304    .text.get_remote_control_point:00000000 get_remote_control_point
+C:\User\Default\ccKD3mNB.s:318    .text.get_remote_control_point:00000004 $d
+C:\User\Default\ccKD3mNB.s:323    .rodata.RC_task.str1.4:00000000 $d
+C:\User\Default\ccKD3mNB.s:331    .text.RC_task:00000000 $t
+C:\User\Default\ccKD3mNB.s:337    .text.RC_task:00000000 RC_task
+C:\User\Default\ccKD3mNB.s:427    .text.RC_task:0000007c $d
+C:\User\Default\ccKD3mNB.s:434    .text.USART3_IRQHandler:00000000 $t
+C:\User\Default\ccKD3mNB.s:440    .text.USART3_IRQHandler:00000000 USART3_IRQHandler
+C:\User\Default\ccKD3mNB.s:609    .text.USART3_IRQHandler:000000c4 $d
+C:\User\Default\ccKD3mNB.s:627    .bss.local_rc_ctrl:00000000 local_rc_ctrl
+C:\User\Default\ccKD3mNB.s:634    .bss.rc_ctrl:00000000 rc_ctrl
+C:\User\Default\ccKD3mNB.s:623    .bss.local_rc_ctrl:00000000 $d
+C:\User\Default\ccKD3mNB.s:630    .bss.rc_ctrl:00000000 $d
+C:\User\Default\ccKD3mNB.s:637    .bss.sbus_rx_buf:00000000 $d
+C:\User\Default\ccKD3mNB.s:641    .bss.sbus_rx_buf:00000000 sbus_rx_buf
+C:\User\Default\ccKD3mNB.s:644    .bss.this_time_rx_len.0:00000000 $d
+C:\User\Default\ccKD3mNB.s:648    .bss.this_time_rx_len.0:00000000 this_time_rx_len.0
+
+UNDEFINED SYMBOLS
+huart3
+hdma_usart3_rx
+usart1_tx_dma_init
+bsp_uart_send_printf
+HAL_Delay

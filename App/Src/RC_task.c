@@ -63,7 +63,7 @@ void RC_init(uint8_t *rx1_buf, uint8_t *rx2_buf, uint16_t dma_buf_num)
     //enalbe idle interrupt
     //使能空闲中断
     __HAL_UART_ENABLE_IT(&huart3, UART_IT_IDLE);
-
+    
     //disable DMA
     //失效DMA
     __HAL_DMA_DISABLE(&hdma_usart3_rx);

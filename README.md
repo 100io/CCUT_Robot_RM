@@ -65,4 +65,4 @@ openocd -f "${env:OPENOCD_HOME}/share/openocd/scripts/interface/stlink.cfg" -f "
 
 
 ## 三、参考文献
-📕 作者 [李伟豪](https://github.com/bakend666) 仓库 [CCUT RoboMaster 步兵代码]("https://github.com/bakend666/CCUT_Robot_RM") `master branch` 的 [`Readme.md`]("./Readme.old.md") .
+📕 作者 [李伟豪](https://github.com/bakend666) 仓库 [CCUT RoboMaster 步兵代码](https://github.com/bakend666/CCUT_Robot_RM) `master branch` 的 [`Readme.md`](./Readme.old.md) .

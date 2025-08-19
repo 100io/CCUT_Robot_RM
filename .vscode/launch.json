@@ -14,8 +14,8 @@
             "servertype": "openocd",
             "showDevDebugOutput": "raw",
             "configFiles": [
-                "E:/Openocd/openocd-20231002/OpenOCD-20231002-0.12.0/share/openocd/scripts/interface/stlink.cfg",
-                "E:/Openocd/openocd-20231002/OpenOCD-20231002-0.12.0/share/openocd/scripts/target/stm32f4x.cfg"
+                "${env:OPENOCD_HOME}/share/openocd/scripts/interface/stlink.cfg",
+                "${env:OPENOCD_HOME}/share/openocd/scripts/target/stm32f4x.cfg"
                 
             ]
         }
